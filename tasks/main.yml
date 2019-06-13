@@ -60,6 +60,23 @@
   service: name={{instance_init_script | basename}} state=started enabled=yes
   when: es_start_service
 
+- name: Raise nofile limit to infinity for elasticsearch in systemd config
+  lineinfile:
+    dest: /usr/lib/systemd/system/elasticsearch.service
+    regexp: "^#?LimitNOFILE="
+    line: "LimitNOFILE=infinity"
+    state: present
+
+- name: Raise memlock limit to infinity for elasticsearch in systemd config
+  lineinfile:
+    dest: /usr/lib/systemd/system/elasticsearch.service
+    regexp: "^#?LimitMEMLOCK="
+    line: "LimitMEMLOCK=infinity"
+    state: present
+  notify:
+    - reload systemd configuration
+    - restart elasticsearch
+
 - name: Wait for elasticsearch to startup
   wait_for: host={{es_api_host}} port={{es_api_port}} delay=5 connect_timeout=1
   when: es_restarted is defined and es_restarted.changed and es_start_service
